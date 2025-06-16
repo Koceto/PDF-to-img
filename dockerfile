@@ -1,65 +1,20 @@
-# Build stage
-FROM node:18-alpine AS builder
-
-# Install system dependencies
-RUN apk add --no-cache \
-    ghostscript \
-    imagemagick \
-    poppler-utils \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    giflib-dev \
-    librsvg-dev
+FROM golang:1.18 AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Install all dependencies
-RUN npm ci
+COPY ./src ./src
+COPY ./api ./api
+COPY ./config ./config
 
-# Copy source code
-COPY . .
+RUN go build -o pdf-to-img-service ./src/main.go
 
-# Build TypeScript
-RUN npm run build
+FROM alpine:latest
 
-# Production stage
-FROM node:18-alpine AS production
+WORKDIR /root/
 
-# Install runtime dependencies only
-RUN apk add --no-cache \
-    ghostscript \
-    imagemagick \
-    poppler-utils \
-    curl
+COPY --from=builder /app/pdf-to-img-service .
 
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --omit=dev && npm cache clean --force
-
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-
-# Create directories
-RUN mkdir -p uploads output
-
-# Change ownership to node user
-RUN chown -R node:node /app
-USER node
-
-# Expose port
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
-
-# Start the application
-CMD ["npm", "start"]
+CMD ["./pdf-to-img-service"]
