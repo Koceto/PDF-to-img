@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  pdf-converter:
+    build: .
+    container_name: pdf-converter-app
+    volumes:
+      - /home/ksavov/pdf-to-img/uploads:/app/uploads
+      - /home/ksavov/pdf-to-img/output:/app/output
+    environment:
+      - NODE_ENV=production
+      - MAX_FILE_SIZE=50mb
+      - UPLOAD_DIR=/app/uploads
+      - OUTPUT_DIR=/app/output
+    restart: unless-stopped
+    networks:
+      FrontEndNet:
+    labels:
+      traefik.enable : true
+      traefik.http.routers.pdf-to-img.entrypoints: websecure
+      traefik.http.routers.pdf-to-img.rule: Host(`pdf-to-img.ksavov.com`)
+      traefik.http.routers.pdf-to-img.tls: true
+      traefik.http.routers.pdf-to-img.tls.certresolver: staging
+      traefik.http.routers.pdf-to-img.service: pdf-to-img
+      traefik.http.services.pdf-to-img.loadbalancer.server.port: 3000
+
+networks:
+  FrontEndNet:
+    external: true
+
+
+volumes:
+  uploads:
+  output:
