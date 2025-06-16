@@ -1,20 +1,22 @@
-FROM golang:1.18 AS builder
+FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY go.mod go.sum ./
-RUN go mod download
+# Install system dependencies
+RUN apk add --no-cache \
+    ghostscript \
+    graphicsmagick
 
-COPY ./src ./src
-COPY ./api ./api
-COPY ./config ./config
+# Install app dependencies
+COPY package*.json ./
+RUN npm install --only=production
 
-RUN go build -o pdf-to-img-service ./src/main.go
+# Bundle app source
+COPY . .
 
-FROM alpine:latest
+# Create uploads directory
+RUN mkdir -p uploads && \
+    chmod 777 uploads
 
-WORKDIR /root/
-
-COPY --from=builder /app/pdf-to-img-service .
-
-CMD ["./pdf-to-img-service"]
+EXPOSE 3000
+CMD [ "npm", "start" ]

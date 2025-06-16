@@ -1,20 +1,24 @@
-version: '3.8'
-
 services:
   pdf-to-img:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
     volumes:
-      - ./src:/app/src
+      - /home/ksavov/pdf-to-img/uploads:/usr/src/app/uploads
     environment:
       - ENV=development
-      - PORT=8080
+      - PORT=3000
+    restart: unless-stopped
     networks:
-      - pdf-to-img-network
+      FrontEndNet:
+    labels:
+      traefik.enable: true
+      traefik.http.routers.pdf-to-img.entrypoints: websecure
+      traefik.http.routers.pdf-to-img.rule: Host(`pdf-to-img.ksavov.com`)
+      traefik.http.routers.pdf-to-img.tls: true
+      traefik.http.routers.pdf-to-img.tls.certresolver: production
+      traefik.http.services.pdf-to-img.loadbalancer.server.port: 3000
 
 networks:
-  pdf-to-img-network:
-    driver: bridge
+  FrontEndNet:
+    external: true
