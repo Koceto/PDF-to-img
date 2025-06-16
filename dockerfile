@@ -4,8 +4,13 @@ WORKDIR /usr/src/app
 
 # Install system dependencies
 RUN apk add --no-cache \
-    ghostscript \
-    graphicsmagick
+    build-base \
+    python3 \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev
 
 # Install app dependencies
 COPY package*.json ./

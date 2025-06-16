@@ -18,6 +18,7 @@ services:
       traefik.http.routers.pdf-to-img.rule: Host(`pdf-to-img.ksavov.com`)
       traefik.http.routers.pdf-to-img.tls: true
       traefik.http.routers.pdf-to-img.tls.certresolver: production
+      traefik.http.routers.pdf-to-img.middlewares: authentik-forward-auth@file
       traefik.http.services.pdf-to-img.loadbalancer.server.port: 3000
 
 networks:

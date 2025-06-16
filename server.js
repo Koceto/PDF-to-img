@@ -1,8 +1,9 @@
 const express = require("express");
 const fileUpload = require("express-fileupload");
 const path = require("path");
-const { fromPath } = require("pdf2pic");
-const fs = require('fs').promises;
+const { PDFDocument } = require('pdf-lib');
+const sharp = require('sharp');
+const pdf2img = require('pdf-img-convert');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,47 +18,75 @@ app.use(
   })
 );
 
+// Serve the index.html file from the parent directory
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'));
+});
+
 app.post("/api/convert", async (req, res) => {
-  let uploadPath;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
   try {
     if (!req.files?.pdf) {
       return res.status(400).json({ error: "No PDF file uploaded" });
     }
 
     const pdfFile = req.files.pdf;
-    uploadPath = path.join(__dirname, "../uploads", pdfFile.name);
 
-    await pdfFile.mv(uploadPath);
+    // Get PDF dimensions
+    const pdfDoc = await PDFDocument.load(pdfFile.data);
+    const firstPage = pdfDoc.getPage(0);
+    const { width, height } = firstPage.getSize();
+    const aspectRatio = width / height;
 
-    const options = {
-      density: 300,
-      saveFilename: `output-${Date.now()}`,
-      savePath: "./uploads",
-      format: "png",
-      width: 1200,
-    };
+    // Send upload complete progress
+    res.write(JSON.stringify({ type: 'upload', progress: 100 }) + '\n');
 
-    const convert = fromPath(uploadPath, options);
-    const pages = await convert.bulk(-1);
-
-    // Delete the original PDF file after conversion
-    await fs.unlink(uploadPath);
-
-    res.json({
-      success: true,
-      images: pages.map((page) => `/uploads/${page.name}`),
+    // Convert PDF to images
+    const baseWidth = 1200;
+    const pngPages = await pdf2img.convert(pdfFile.data, {
+      width: baseWidth,
+      height: Math.round(baseWidth / aspectRatio),
     });
+
+    const totalPages = pngPages.length;
+
+    // Process each page
+    for (let i = 0; i < totalPages; i++) {
+      const pageBuffer = pngPages[i];
+
+      // Optimize the PNG using sharp
+      const optimizedBuffer = await sharp(pageBuffer)
+        .png({ quality: 90 })
+        .toBuffer();
+
+      // Convert to base64 and send
+      const base64Image = optimizedBuffer.toString('base64');
+
+      // Send conversion progress
+      res.write(JSON.stringify({
+        type: 'conversion',
+        progress: Math.round(((i + 1) / totalPages) * 100)
+      }) + '\n');
+
+      // Send the converted image as base64
+      res.write(JSON.stringify({
+        url: `data:image/png;base64,${base64Image}`
+      }) + '\n');
+    }
+
+    // End the response
+    res.end();
+
   } catch (error) {
     console.error("Conversion error:", error);
-    // Cleanup uploaded file if it exists
-    if (uploadPath) {
-      try {
-        await fs.unlink(uploadPath);
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
+    if (!res.headersSent) {
+      res.status(500).json({ error: "PDF conversion failed" });
+    } else {
+      res.write(JSON.stringify({ error: "PDF conversion failed" }) + '\n');
+      res.end();
     }
-    res.status(500).json({ error: "PDF conversion failed" });
   }
 });
 

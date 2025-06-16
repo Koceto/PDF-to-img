@@ -5,66 +5,163 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
     line-height: 1.6;
-    background: #f4f4f4;
 }
 
 .container {
-    max-width: 1000px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    width: 100%;
 }
 
 h1 {
     text-align: center;
-    margin-bottom: 2rem;
     color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+    font-weight: 700;
 }
 
-.drop-zone {
-    max-width: 100%;
-    height: 200px;
-    padding: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.upload-area {
+    border: 3px dashed #667eea;
+    border-radius: 15px;
+    padding: 40px;
     text-align: center;
+    transition: all 0.3s ease;
     cursor: pointer;
-    border: 4px dashed #ccc;
-    border-radius: 10px;
-    margin-bottom: 1rem;
+    margin-bottom: 30px;
 }
 
-.drop-zone--over {
-    border-color: #000;
+.upload-area:hover {
+    border-color: #764ba2;
+    background-color: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
 }
 
-.drop-zone__input {
+.upload-area.dragover {
+    border-color: #764ba2;
+    background-color: rgba(102, 126, 234, 0.1);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.upload-text {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.upload-hint {
+    font-size: 0.9rem;
+    color: #999;
+}
+
+#pdfFile {
     display: none;
 }
 
 .convert-btn {
     width: 100%;
-    padding: 1rem;
-    background: #2ecc71;
+    padding: 1.2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.convert-btn i {
+    font-size: 1.2rem;
 }
 
 .convert-btn:hover {
-    background: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.convert-btn:active {
+    transform: translateY(0);
+}
+
+.convert-btn:disabled {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.progress-container {
+    margin: 30px 0;
+    display: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.progress-container.active {
+    display: block;
+    opacity: 1;
+}
+
+.progress-group {
+    margin-bottom: 20px;
+}
+
+.progress-group:last-child {
+    margin-bottom: 0;
+}
+
+.progress-label {
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-percentage {
+    font-size: 0.9rem;
+    color: #667eea;
+    font-weight: 700;
 }
 
 .progress {
-    margin: 1rem 0;
-    height: 20px;
-    background: #f0f0f0;
-    border-radius: 10px;
+    height: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 4px;
     overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0;
 }
 
 .progress-bar {
@@ -72,10 +169,101 @@ h1 {
     background: #2ecc71;
     width: 0;
     transition: width 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
 }
 
 .hidden {
     display: none;
+}
+
+.results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.image-container {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-container:hover {
+    transform: translateY(-5px);
+}
+
+.image-wrapper {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.image-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.image-container .download-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.image-container .download-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.image-container .download-btn i {
+    font-size: 1.1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.convert-btn i {
+    transition: transform 0.3s ease;
+}
+
+.convert-btn:disabled i {
+    animation: spin 1s linear infinite;
+}
+
+.download-btn {
+    padding: 0.8rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+}
+
+.download-btn:hover {
+    background: #2980b9;
 }
 
 .results {
