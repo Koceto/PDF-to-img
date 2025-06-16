@@ -1,5 +1,6 @@
 services:
   pdf-to-img:
+    container_name: pdf-to-img
     build:
       context: .
       dockerfile: Dockerfile
