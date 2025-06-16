@@ -1,4 +1,4 @@
-[⚠️ Suspicious Content] # Use Node.js with Alpine for smaller image
+# Use Node.js with Alpine for smaller image
 FROM node:18-alpine
 
 # Install system dependencies for PDF processing and curl for health check
