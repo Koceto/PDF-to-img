@@ -84,7 +84,17 @@
     e.preventDefault();
 
     const fileInput = document.getElementById("pdfFile");
+    if (!fileInput.files.length) {
+      alert('Please select a PDF file first');
+      return;
+    }
+
     const file = fileInput.files[0];
+    if (file.type !== 'application/pdf') {
+      alert('Please select a valid PDF file');
+      return;
+    }
+
     const submitButton = e.target.querySelector('button[type="submit"]');
     const uploadProgress = document.getElementById("uploadProgress");
     const convertProgress = document.getElementById("convertProgress");
