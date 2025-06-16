@@ -1,7 +1,7 @@
-# Use Node.js with Alpine for smaller image
-FROM node:18-alpine
+# Build stage
+FROM node:18-alpine AS builder
 
-# Install system dependencies for PDF processing and curl for health check
+# Install system dependencies
 RUN apk add --no-cache \
     ghostscript \
     imagemagick \
@@ -10,29 +10,45 @@ RUN apk add --no-cache \
     jpeg-dev \
     pango-dev \
     giflib-dev \
-    librsvg-dev \
-    curl
+    librsvg-dev
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (needed for TypeScript build)
+# Install all dependencies
 RUN npm ci
 
-# Copy application code
+# Copy source code
 COPY . .
-
-# Create directories for uploads and output
-RUN mkdir -p uploads output
 
 # Build TypeScript
 RUN npm run build
 
-# Remove dev dependencies after build (optional optimization)
+# Production stage
+FROM node:18-alpine AS production
+
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    ghostscript \
+    imagemagick \
+    poppler-utils \
+    curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
 RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Create directories
+RUN mkdir -p uploads output
 
 # Change ownership to node user
 RUN chown -R node:node /app
