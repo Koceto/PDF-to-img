@@ -40,13 +40,30 @@ function updateDropZone(dropZone, file) {
 document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const formData = new FormData();
   const fileInput = document.getElementById("pdfFile");
+  const file = fileInput.files[0];
   const progressBar = document.querySelector(".progress-bar");
   const progress = document.getElementById("progress");
   const results = document.getElementById("results");
 
-  formData.append("pdf", fileInput.files[0]);
+  // Add file validation
+  if (!file) {
+    alert("Please select a PDF file");
+    return;
+  }
+
+  if (file.type !== "application/pdf") {
+    alert("Please upload only PDF files");
+    return;
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    alert("File size must be less than 50MB");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("pdf", file);
   progress.classList.remove("hidden");
 
   try {
@@ -58,7 +75,9 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
-    results.innerHTML = data.images.map((img) => `<img src="${img}" alt="Converted page">`).join("");
+    results.innerHTML = data.images
+      .map((img) => `<img src="${img}" alt="Converted page">`)
+      .join("");
   } catch (error) {
     alert(`Error: ${error.message || "Failed to convert PDF"}`);
   } finally {

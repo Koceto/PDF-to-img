@@ -2,6 +2,7 @@ const express = require("express");
 const fileUpload = require("express-fileupload");
 const path = require("path");
 const { fromPath } = require("pdf2pic");
+const fs = require('fs').promises;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,13 +18,14 @@ app.use(
 );
 
 app.post("/api/convert", async (req, res) => {
+  let uploadPath;
   try {
     if (!req.files?.pdf) {
       return res.status(400).json({ error: "No PDF file uploaded" });
     }
 
     const pdfFile = req.files.pdf;
-    const uploadPath = path.join(__dirname, "../uploads", pdfFile.name);
+    uploadPath = path.join(__dirname, "../uploads", pdfFile.name);
 
     await pdfFile.mv(uploadPath);
 
@@ -38,12 +40,23 @@ app.post("/api/convert", async (req, res) => {
     const convert = fromPath(uploadPath, options);
     const pages = await convert.bulk(-1);
 
+    // Delete the original PDF file after conversion
+    await fs.unlink(uploadPath);
+
     res.json({
       success: true,
       images: pages.map((page) => `/uploads/${page.name}`),
     });
   } catch (error) {
     console.error("Conversion error:", error);
+    // Cleanup uploaded file if it exists
+    if (uploadPath) {
+      try {
+        await fs.unlink(uploadPath);
+      } catch (cleanupError) {
+        console.error("Cleanup error:", cleanupError);
+      }
+    }
     res.status(500).json({ error: "PDF conversion failed" });
   }
 });
