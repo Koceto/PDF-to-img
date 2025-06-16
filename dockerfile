@@ -1,7 +1,7 @@
-# Use Node.js with Alpine for smaller image
+[⚠️ Suspicious Content] # Use Node.js with Alpine for smaller image
 FROM node:18-alpine
 
-# Install system dependencies for PDF processing
+# Install system dependencies for PDF processing and curl for health check
 RUN apk add --no-cache \
     ghostscript \
     imagemagick \
@@ -10,7 +10,8 @@ RUN apk add --no-cache \
     jpeg-dev \
     pango-dev \
     giflib-dev \
-    librsvg-dev
+    librsvg-dev \
+    curl
 
 # Set working directory
 WORKDIR /app
@@ -18,8 +19,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (needed for TypeScript build)
+RUN npm ci
 
 # Copy application code
 COPY . .
@@ -29,6 +30,9 @@ RUN mkdir -p uploads output
 
 # Build TypeScript
 RUN npm run build
+
+# Remove dev dependencies after build (optional optimization)
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Change ownership to node user
 RUN chown -R node:node /app
